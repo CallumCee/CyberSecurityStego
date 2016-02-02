@@ -1,8 +1,7 @@
 .DS_Store
 .metdata
-
+.recommenders
 .classpath
 .metadata
 .project
-FileReader.class
-Steg.class
+*.class
