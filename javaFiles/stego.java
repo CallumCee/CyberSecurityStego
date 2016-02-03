@@ -65,23 +65,21 @@ class Steg
 			
 			
 			// Convert Payload Size to Binary String (32 bits)
-			String binaryPayloadSize = Integer.toBinaryString(0x80000000 + binaryPayload.length()).substring(1);
-
+			String binaryPayloadSize = Long.toBinaryString(0x100000000L + binaryPayload.length()).substring(1);
 			
 			// No File Extension, Therefore 64 0's
-			String binaryExtension = String.format("%063d", 0);
+			String binaryExtension = String.format("%064d", 0);
 
 			// 
 			String binaryOutput = binaryPayloadSize + binaryExtension + binaryPayload;
 
-			// !!!!!!!!! IN PROGRESS !!!!!!!!!
 			int c;
 			int x = 1;
 			int x2= 0;
 			String tmp;
 			while ((c = in.read()) != -1) {
 				// get red byte (LSB)
-				if(x%3 == 0 && x2 < binaryOutput.length()){
+				if(x2 < binaryOutput.length()){
 						tmp = (Integer.toBinaryString(0x100 + c).substring(1,8)) + binaryOutput.charAt(x2);
 						out.write(Integer.parseInt(tmp, 2));
 						x2++;
@@ -90,111 +88,6 @@ class Steg
 				}
 				x++;
 			}
-			// !!!!!!!!! IN PROGRESS !!!!!!!!!
-
-			
-			
-			
-			
-			
-//			// Convert Payload To Binary String
-//			String binaryPayload = "";
-//			int curChar = 0;
-//			String curCharString = "";
-//
-//			for (int i = 0; i < payload.length(); i++){
-//				curChar = (int) payload.charAt(i);
-//				//0 added to the front as function returns ascii as 7-bit binary
-//				curCharString = "0" + Integer.toBinaryString(curChar);
-//				binaryPayload += curCharString;
-//			}
-
-//			//2 - Obtain the 'size' figure
-//			int sizeToHide = binaryPayload.length();
-//			//2.5 - Create the binary of this and pad as necessary (32bit)
-//			String sizeString = Integer.toBinaryString(sizeToHide);
-//			//check how many bits need to be padded for 32bit
-//			int leftToPad = sizeBitsLength - sizeString.length();
-//			//TODO: add in failstate here if size is too large
-//			for(int i = 0; i < leftToPad; i++){
-//				sizeString = "0" + sizeString;
-//			}
-//
-//
-//			//3 - Obtain the 'extension'
-//			//3.5 - Create the binary of this and pad as necessary (64bit)
-//			//TODO: implement this for when a file extension is in use (currently set to pad)
-//			String extensionString = "";
-//			for (int i = 0; i < extBitsLength; i++){
-//				extensionString = "0" + extensionString;
-//			}
-//
-//
-//			//4 - apply these strings bit by bit to each byte for the 'extend-header'
-//			//4.5 - write this to file
-//			int currentByte;
-//			String curByteString;
-//
-//			//size concat
-//			for (int i = 0; i < (sizeBitsLength); i++){
-//				currentByte = in.read();
-//
-//				//break if end of file
-//				if (currentByte == -1){
-//					break;
-//				}
-//
-//				//TODO: Swap LSB to sizeString.charAt(i);
-//				//TODO: write this byte out to file	
-//			}
-//
-//			//extension concat
-//			for (int i = 0; i < (extBitsLength); i++){
-//				currentByte = in.read();
-//
-//				//break if end of file
-//				if (currentByte == -1){
-//					break;
-//				}
-//
-//				//TODO: Swap LSB to extensionString.charAt(i);
-//				//TODO: write this byte out to file	
-//			}
-//
-//
-//			//5 - write the binary_payload_string bit by bit to each byte
-//			//5.5 - loop until payload is written
-//			for (int i = 0; i < (sizeToHide); i++){
-//				currentByte = in.read();
-//
-//				//break if end of file
-//				if (currentByte == -1){
-//					break;
-//				}
-//
-//				//TODO: Swap LSB to binaryPayload.charAt(i);
-//				//TODO: write this byte out to file	
-//			}
-
-			//6 - write the rest of the file as normal and close
-
-
-			//			// go through payload
-			//			int x = 1;
-			//			int c;
-			//			while ((c = in.read()) != -1) {
-			//
-			//				// get red byte (LSB)
-			//				if(x%3 == 0){
-			//					// get LSB and change to string bit
-			//					// this is only a test for now
-			//					out.write((byte) (c & ~(1 << 0)));
-			//				}else{
-			//					out.write(c);
-			//				}
-			//				x++;
-			//			}
-
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -204,8 +97,6 @@ class Steg
 		}catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-
-
 		}finally {
 			if (in != null) {
 				try {
@@ -238,6 +129,66 @@ class Steg
 	 */
 	public String extractString(String stego_image)
 	{
+		
+		FileInputStream in = null;
+		try {
+			
+			// Input And Output Streams
+		
+			in = new FileInputStream("output.bmp");
+
+			in.skip(54);
+			
+			String size = "";
+
+			for(int i = 0; i < 32; i++){
+				size += Integer.toBinaryString(0x100 + in.read()).substring(8);
+			}
+			
+			int size1 = Integer.parseInt(size, 2);
+			
+			String extension = "";
+
+			for(int i = 0; i < 64; i++){
+				extension += Integer.toBinaryString(0x100 + in.read()).substring(8);
+			}
+			
+			String recoveredText = "";
+			String recoveredBinary = "";
+
+			for(int i = 0; i < size1; i++){
+				recoveredBinary += Integer.toBinaryString(0x100 + in.read()).substring(8);
+			}
+			
+			for(int i = 0; i <= recoveredBinary.length()-8; i += 8)
+			{
+				recoveredText += (char)Integer.parseInt(recoveredBinary.substring(i, i+8), 2);
+			}
+			
+			System.out.println(recoveredText);
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally {
+			if (in != null) {
+				try {
+					in.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		
+		
 		return null;
 	}
 

@@ -8,6 +8,7 @@ public class Main {
 		Steg s = new Steg();
 		//s.hideString("a", "white.bmp");
 		s.hideString("this is a test message","");
+		s.extractString("");
 	}
 
 }
