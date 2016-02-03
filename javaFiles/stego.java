@@ -54,7 +54,6 @@ class Steg
 			// Copy Header To Output File
 			for(int i = 0; i < 54; i++){
 				out.write(in.read());
-				System.out.println("1");
 			}
 
 			
@@ -82,17 +81,12 @@ class Steg
 			String tmp;
 			while ((c = in.read()) != -1) {
 				// get red byte (LSB)
-				if(x%3 == 0){
-					if(x2 < binaryOutput.length()){
+				if(x%3 == 0 && x2 < binaryOutput.length()){
 						tmp = (Integer.toBinaryString(0x100 + c).substring(1,8)) + binaryOutput.charAt(x2);
-						System.out.println(Integer.parseInt(tmp, 2));
 						out.write(Integer.parseInt(tmp, 2));
 						x2++;
-					}
 				}else{
 					out.write(c);
-
-					System.out.println(c);
 				}
 				x++;
 			}
