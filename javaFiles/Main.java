@@ -7,8 +7,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		Steg s = new Steg();
 		//s.hideString("a", "white.bmp");
-		s.hideString(null,"");
-		
+		s.hideString("this is a test message","");
 	}
 
 }
