@@ -45,112 +45,161 @@ class Steg
 		FileInputStream in = null;
 		FileOutputStream out = null;
 		try {
-			// Input and Output streams
+			
+			// Input And Output Streams
 			in = new FileInputStream("baboon.bmp");
 			out = new FileOutputStream("output.bmp");
 
-			// copy header to new file
+			
+			// Copy Header To Output File
 			for(int i = 0; i < 54; i++){
 				out.write(in.read());
+				System.out.println("1");
 			}
+
 			
-			//1 - Convert payload to binary string
+			// Convert Payload To Binary String (8 byte chunks)
 			String binaryPayload = "";
-			int curChar = 0;
-			String curCharString = "";
-			
-			for (int i = 0; i < payload.length(); i++){
-				curChar = (int) payload.charAt(i);
-				//0 added to the front as function returns ascii as 7-bit binary
-				curCharString = "0" + Integer.toBinaryString(curChar);
-				binaryPayload += curCharString;
-			}
-			
-			//2 - Obtain the 'size' figure
-			int sizeToHide = binaryPayload.length();
-			//2.5 - Create the binary of this and pad as necessary (32bit)
-			String sizeString = Integer.toBinaryString(sizeToHide);
-			//check how many bits need to be padded for 32bit
-			int leftToPad = sizeBitsLength - sizeString.length();
-			//TODO: add in failstate here if size is too large
-			for(int i = 0; i < leftToPad; i++){
-				sizeString = "0" + sizeString;
+			for(char c : payload.toCharArray()){
+				binaryPayload += Integer.toBinaryString(0x100 + c).substring(1);
 			}
 			
 			
-			//3 - Obtain the 'extension'
-			//3.5 - Create the binary of this and pad as necessary (64bit)
-			//TODO: implement this for when a file extension is in use (currently set to pad)
-			String extensionString = "";
-			for (int i = 0; i < extBitsLength; i++){
-				extensionString = "0" + extensionString;
-			}
+			// Convert Payload Size to Binary String (32 bits)
+			String binaryPayloadSize = Integer.toBinaryString(0x80000000 + binaryPayload.length()).substring(1);
+
 			
-			
-			//4 - apply these strings bit by bit to each byte for the 'extend-header'
-			//4.5 - write this to file
-			int currentByte;
-			String curByteString;
-			
-			//size concat
-			for (int i = 0; i < (sizeBitsLength); i++){
-				currentByte = in.read();
-				
-				//break if end of file
-				if (currentByte == -1){
-					break;
+			// No File Extension, Therefore 64 0's
+			String binaryExtension = String.format("%063d", 0);
+
+			// 
+			String binaryOutput = binaryPayloadSize + binaryExtension + binaryPayload;
+
+			// !!!!!!!!! IN PROGRESS !!!!!!!!!
+			int c;
+			int x = 1;
+			int x2= 0;
+			String tmp;
+			while ((c = in.read()) != -1) {
+				// get red byte (LSB)
+				if(x%3 == 0){
+					if(x2 < binaryOutput.length()){
+						tmp = (Integer.toBinaryString(0x100 + c).substring(1,8)) + binaryOutput.charAt(x2);
+						System.out.println(Integer.parseInt(tmp, 2));
+						out.write(Integer.parseInt(tmp, 2));
+						x2++;
+					}
+				}else{
+					out.write(c);
+
+					System.out.println(c);
 				}
-				
-				//TODO: Swap LSB to sizeString.charAt(i);
-				//TODO: write this byte out to file	
+				x++;
 			}
-			
-			//extension concat
-			for (int i = 0; i < (extBitsLength); i++){
-				currentByte = in.read();
-				
-				//break if end of file
-				if (currentByte == -1){
-					break;
-				}
-				
-				//TODO: Swap LSB to extensionString.charAt(i);
-				//TODO: write this byte out to file	
-			}
+			// !!!!!!!!! IN PROGRESS !!!!!!!!!
+
 			
 			
-			//5 - write the binary_payload_string bit by bit to each byte
-			//5.5 - loop until payload is written
-			for (int i = 0; i < (sizeToHide); i++){
-				currentByte = in.read();
-				
-				//break if end of file
-				if (currentByte == -1){
-					break;
-				}
-				
-				//TODO: Swap LSB to binaryPayload.charAt(i);
-				//TODO: write this byte out to file	
-			}
 			
+			
+			
+//			// Convert Payload To Binary String
+//			String binaryPayload = "";
+//			int curChar = 0;
+//			String curCharString = "";
+//
+//			for (int i = 0; i < payload.length(); i++){
+//				curChar = (int) payload.charAt(i);
+//				//0 added to the front as function returns ascii as 7-bit binary
+//				curCharString = "0" + Integer.toBinaryString(curChar);
+//				binaryPayload += curCharString;
+//			}
+
+//			//2 - Obtain the 'size' figure
+//			int sizeToHide = binaryPayload.length();
+//			//2.5 - Create the binary of this and pad as necessary (32bit)
+//			String sizeString = Integer.toBinaryString(sizeToHide);
+//			//check how many bits need to be padded for 32bit
+//			int leftToPad = sizeBitsLength - sizeString.length();
+//			//TODO: add in failstate here if size is too large
+//			for(int i = 0; i < leftToPad; i++){
+//				sizeString = "0" + sizeString;
+//			}
+//
+//
+//			//3 - Obtain the 'extension'
+//			//3.5 - Create the binary of this and pad as necessary (64bit)
+//			//TODO: implement this for when a file extension is in use (currently set to pad)
+//			String extensionString = "";
+//			for (int i = 0; i < extBitsLength; i++){
+//				extensionString = "0" + extensionString;
+//			}
+//
+//
+//			//4 - apply these strings bit by bit to each byte for the 'extend-header'
+//			//4.5 - write this to file
+//			int currentByte;
+//			String curByteString;
+//
+//			//size concat
+//			for (int i = 0; i < (sizeBitsLength); i++){
+//				currentByte = in.read();
+//
+//				//break if end of file
+//				if (currentByte == -1){
+//					break;
+//				}
+//
+//				//TODO: Swap LSB to sizeString.charAt(i);
+//				//TODO: write this byte out to file	
+//			}
+//
+//			//extension concat
+//			for (int i = 0; i < (extBitsLength); i++){
+//				currentByte = in.read();
+//
+//				//break if end of file
+//				if (currentByte == -1){
+//					break;
+//				}
+//
+//				//TODO: Swap LSB to extensionString.charAt(i);
+//				//TODO: write this byte out to file	
+//			}
+//
+//
+//			//5 - write the binary_payload_string bit by bit to each byte
+//			//5.5 - loop until payload is written
+//			for (int i = 0; i < (sizeToHide); i++){
+//				currentByte = in.read();
+//
+//				//break if end of file
+//				if (currentByte == -1){
+//					break;
+//				}
+//
+//				//TODO: Swap LSB to binaryPayload.charAt(i);
+//				//TODO: write this byte out to file	
+//			}
+
 			//6 - write the rest of the file as normal and close
 
 
-//			// go through payload
-//			int x = 1;
-//			int c;
-//			while ((c = in.read()) != -1) {
-//
-//				// get red byte (LSB)
-//				if(x%3 == 0){
-//					// get LSB and change to string bit
-//					// this is only a test for now
-//					out.write((byte) (c & ~(1 << 0)));
-//				}else{
-//					out.write(c);
-//				}
-//				x++;
-//			}
+			//			// go through payload
+			//			int x = 1;
+			//			int c;
+			//			while ((c = in.read()) != -1) {
+			//
+			//				// get red byte (LSB)
+			//				if(x%3 == 0){
+			//					// get LSB and change to string bit
+			//					// this is only a test for now
+			//					out.write((byte) (c & ~(1 << 0)));
+			//				}else{
+			//					out.write(c);
+			//				}
+			//				x++;
+			//			}
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
