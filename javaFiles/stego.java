@@ -140,6 +140,13 @@ class Steg
 			System.err.println("Unable to write modified body to output file.");
 		}
 
+		try {
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		return null;
 	} 
@@ -153,64 +160,75 @@ class Steg
 	public String extractString(String stego_image)
 	{
 
+		// Create FileInputStream
 		FileInputStream in = null;
 		try {
-
-			// Input And Output Streams
-
 			in = new FileInputStream("output.bmp");
-
-			in.skip(54);
-
-			String size = "";
-
-			for(int i = 0; i < 32; i++){
-				size += Integer.toBinaryString(0x100 + in.read()).substring(8);
-			}
-
-			int size1 = Integer.parseInt(size, 2);
-
-			String extension = "";
-
-			for(int i = 0; i < 64; i++){
-				extension += Integer.toBinaryString(0x100 + in.read()).substring(8);
-			}
-
-			String recoveredText = "";
-			String recoveredBinary = "";
-
-			for(int i = 0; i < size1; i++){
-				recoveredBinary += Integer.toBinaryString(0x100 + in.read()).substring(8);
-			}
-
-			for(int i = 0; i <= recoveredBinary.length()-8; i += 8)
-			{
-				recoveredText += (char)Integer.parseInt(recoveredBinary.substring(i, i+8), 2);
-			}
-
-			System.out.println(recoveredText);
-
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}finally {
-			if (in != null) {
-				try {
-					in.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+			System.err.println("Unable to open " + stego_image + ".");
+			return "";
 		}
 
+		try {
+			in.skip(headerBitsLength);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to skip header.");
+			return "";
+		}
 
+		// Read In File Body
+		List<Integer> fileBytes = new ArrayList<Integer>();
+		int c;
+		try{
+			while((c = in.read()) != -1){
+				fileBytes.add(c);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to read body of " + stego_image + ".");
+			return "";
+		}
+
+		// Extract String Size
+		String binaryStringSize = "0";
+		for(int i = 0; i < sizeBitsLength; i++){
+			binaryStringSize += extractLsb(fileBytes.remove(0));
+		}
+		int stringSize = Integer.parseInt(binaryStringSize,2);
+
+		// Extract Extension
+		String binaryExtension = "";
+		for(int i = 0; i < extBitsLength; i++){
+			binaryExtension += extractLsb(fileBytes.remove(0));
+		}
+
+		String extension = "";
+		for(int i = 0; i <= binaryExtension.length()-8; i += 8)
+		{
+			extension += (char)Integer.parseInt(binaryExtension.substring(i, i+8), 2);
+		}
+		
+		// Extract Secret Message
+		String binaryMessage = "";
+		for(int i = 0; i < stringSize; i++){
+			binaryMessage += extractLsb(fileBytes.remove(0));
+		}
+
+		String message = "";
+		for(int i = 0; i <= binaryMessage.length()-8; i += 8)
+		{
+			message += (char)Integer.parseInt(binaryMessage.substring(i, i+8), 2);
+		}
+
+		System.out.println(message);
+
+		try {
+			in.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		return null;
 	}
@@ -253,5 +271,12 @@ class Steg
 	public int swapLsb(int bitToHide,int byt)
 	{
 		return (byt >> 1 << 1) + bitToHide;
+	}
+
+	/** This method extracts the LSB of a byte
+	 * 
+	 */
+	public int extractLsb(int byt){
+		return byt%2;
 	}
 }
