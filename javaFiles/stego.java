@@ -48,17 +48,19 @@ class Steg
 
 		FileInputStream in = null;
 		FileOutputStream out = null;
+		
+		String outName = "output.bmp";
 
 
 		// ---------- Input Cover File ----------
 
 		// Open Input File
 		try {
-			in = new FileInputStream("baboon.bmp");
+			in = new FileInputStream(cover_filename);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.err.println("Unable to open " + cover_filename + ".");
-			return "";
+			return "Fail";
 		}
 
 		// Read Header
@@ -70,7 +72,7 @@ class Steg
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to read header of " + cover_filename + ".");
-			return "";
+			return "Fail";
 		}
 
 		// Read Body
@@ -83,7 +85,7 @@ class Steg
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to read body of " + cover_filename + ".");
-			return "";
+			return "Fail";
 		}
 
 
@@ -109,11 +111,11 @@ class Steg
 
 		// Create Output File
 		try {
-			out = new FileOutputStream("output.bmp");
+			out = new FileOutputStream(outName);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.err.println("Unable to create output file.");
-			return "";
+			return "Fail";
 		}
 
 		// Copy Header To Output File (Unchanged)
@@ -124,6 +126,7 @@ class Steg
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to write header to output file.");
+			return "Fail";
 		}
 
 		// Copy Body To Output File (Modified)
@@ -138,6 +141,7 @@ class Steg
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to write modified body to output file.");
+			return "Fail";
 		}
 
 		try {
@@ -146,9 +150,11 @@ class Steg
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "Fail";
 		}
 
-		return null;
+		//if successful then return the filename of outfile
+		return outName;
 	} 
 	//TODO you must write this method
 	/**
@@ -163,11 +169,11 @@ class Steg
 		// Create FileInputStream
 		FileInputStream in = null;
 		try {
-			in = new FileInputStream("output.bmp");
+			in = new FileInputStream(stego_image);
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 			System.err.println("Unable to open " + stego_image + ".");
-			return "";
+			return "Fail";
 		}
 
 		try {
@@ -175,7 +181,7 @@ class Steg
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to skip header.");
-			return "";
+			return "Fail";
 		}
 
 		// Read In File Body
@@ -188,9 +194,20 @@ class Steg
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to read body of " + stego_image + ".");
-			return "";
+			return "Fail";
 		}
 
+		//DO A CHECK HERE TO MAKE SURE fileBytes.size() > (sizeBitLength + extBitLength)
+		if (fileBytes.size() < (sizeBitsLength + extBitsLength)){
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return "Fail";
+		}
+		
 		// Extract String Size
 		String binaryStringSize = "0";
 		for(int i = 0; i < sizeBitsLength; i++){
@@ -210,6 +227,17 @@ class Steg
 			extension += (char)Integer.parseInt(binaryExtension.substring(i, i+8), 2);
 		}
 		
+		//DO A CHECK HERE TO MAKE SURE fileBytes.size() >= stringSize
+		if (fileBytes.size() < stringSize){
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return "Fail";
+		}
+		
 		// Extract Secret Message
 		String binaryMessage = "";
 		for(int i = 0; i < stringSize; i++){
@@ -222,15 +250,16 @@ class Steg
 			message += (char)Integer.parseInt(binaryMessage.substring(i, i+8), 2);
 		}
 
-		System.out.println(message);
+		//System.out.println(message);
 
 		try {
 			in.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+			return "Fail";
 		}
 
-		return null;
+		return message;
 	}
 
 	//TODO you must write this method
