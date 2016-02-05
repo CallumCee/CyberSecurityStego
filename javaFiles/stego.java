@@ -273,7 +273,93 @@ class Steg
 	 */
 	public String hideFile(String file_payload, String cover_image)
 	{
-		return null;
+		FileReader fr = new FileReader(file_payload);
+		FileInputStream in = null;
+		FileOutputStream out = null;
+		
+		String outName = "output2.bmp";
+		
+		// Open Input File
+		try {
+			in = new FileInputStream(cover_image);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.err.println("Unable to open " + cover_image + ".");
+			return "Fail";
+		}
+
+		// Read Header
+		List<Integer> header = new ArrayList<Integer>();
+		try {
+			for(int i = 0; i <54; i++){
+				header.add(in.read());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to read header of " + cover_image + ".");
+			return "Fail";
+		}
+
+		// Read Body
+		List<Integer> body = new ArrayList<Integer>();
+		int byt;
+		try {
+			while((byt = in.read()) != -1){
+				body.add(byt);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to read body of " + cover_image + ".");
+			return "Fail";
+		}
+		
+		// Create Output File
+		try {
+			out = new FileOutputStream(outName);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.err.println("Unable to create output file.");
+			return "Fail";
+		}
+		
+		// Copy Header To Output File (Unchanged)
+		try {
+			for(int i : header){
+				out.write(i);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to write header to output file.");
+			return "Fail";
+		}
+
+		// Copy Body To Output File (Modified)
+		//--------PROBLEM COULD LIE HERE?-----------
+		try {
+			for(int i : body){
+				if (fr.hasNextBit()){
+					i = swapLsb(fr.getNextBit(),i);
+				}
+				out.write(i);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to write modified body to output file.");
+			return "Fail";
+		}
+
+		try {
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "Fail";
+		}
+
+		//if successful then return the filename of outfile
+		return outName;
+	
 	}
 
 	//TODO you must write this method
@@ -286,7 +372,119 @@ class Steg
 	 */
 	public String extractFile(String stego_image)
 	{
-		return null;
+
+		// Create FileInputStream
+		FileInputStream in = null;
+		try {
+			in = new FileInputStream(stego_image);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+			System.err.println("Unable to open " + stego_image + ".");
+			return "Fail";
+		}
+	
+		try {
+			in.skip(headerBitsLength);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to skip header.");
+			return "Fail";
+		}
+	
+		// Read In File Body
+		List<Integer> fileBytes = new ArrayList<Integer>();
+		int c;
+		try{
+			while((c = in.read()) != -1){
+				fileBytes.add(c);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to read body of " + stego_image + ".");
+			return "Fail";
+		}
+	
+		//DO A CHECK HERE TO MAKE SURE fileBytes.size() > (sizeBitLength + extBitLength)
+		if (fileBytes.size() < (sizeBitsLength + extBitsLength)){
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return "Fail";
+		}
+		
+		// Extract File Size
+		String binaryFileSize = "";
+		for(int i = 0; i < sizeBitsLength; i++){
+			binaryFileSize += extractLsb(fileBytes.remove(0));
+		}
+		
+		int newFileSize = Integer.parseInt(binaryFileSize,2);
+	
+		// Extract Extension
+		String binaryExtension = "";
+		for(int i = 0; i < extBitsLength; i++){
+			binaryExtension += extractLsb(fileBytes.remove(0));
+		}
+	
+		String extension = "";
+		for(int i = 0; i <= binaryExtension.length()-8; i += 8)
+		{
+			extension += (char)Integer.parseInt(binaryExtension.substring(i, i+8), 2);
+		}
+		
+		//Create outfile name
+		String outName = stego_image.substring(0, stego_image.length() - 4) + extension;
+		//Strip whitespace if any
+		outName = outName.replaceAll("\0", "");
+		
+		//DO A CHECK HERE TO MAKE SURE fileBytes.size() >= stringSize
+		if (fileBytes.size() < newFileSize){
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return "Fail";
+		}
+		
+		
+		//CREATE OUTPUT FILE
+		FileOutputStream out = null;
+		
+		try {
+			out = new FileOutputStream(outName);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.err.println("Unable to create output file.");
+			return "Fail";
+		}
+		
+		
+		// Extract File
+		
+		//--------PROBLEM COULD LIE HERE?-----------
+		try{
+			for(int i = 0; i < newFileSize; i++){
+				out.write(extractLsb(fileBytes.remove(0)));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Fail";
+		}
+	
+		try {
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Fail";
+		}
+	
+		return outName;
 
 	}
 

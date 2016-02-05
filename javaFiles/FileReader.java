@@ -279,7 +279,30 @@ public class FileReader
 	 */
 	private void populateSizeBits()
 	{
-	
+		//Set up arraylist
+		sbits = new ArrayList<Integer>();
+		
+		//using getFileSize() which returns an INTEGER & add to 32bit to pad 0's
+		String fileSizeBinary = Long.toBinaryString(0x100000000L + getFileSize()).substring(1);
+		
+		//split string into string array
+		String[] sizeStringArray = fileSizeBinary.split("(?!^)");
+		
+		int currentInt;
+		//add to sbits
+		for (int i=0; i < sizeStringArray.length; i++){
+			currentInt = Integer.parseInt(sizeStringArray[i]);
+			sbits.add(currentInt);
+		}
+		
+		if (sbits.size() != 32){
+			success = false;//fail
+			System.out.println("populateSizeBits() isn't working");
+		}
+		
+		//Set up iterator
+		sBitsIt = sbits.iterator();
+		
 	}
 	
 	//TODO YOU MUST FILL IN THIS METHOD
@@ -288,8 +311,35 @@ public class FileReader
 	 * 64 bits used to represent the extension
 	 */
 	private void populateExtensionBits()
-	{
-
+	{	
+		//using getExtension() which returns a STRING
+		// convert extension to binary string (8 byte chunks)
+		String binaryExtension = "";
+		for(char c : getExtension().toCharArray()){
+			binaryExtension += Integer.toBinaryString(0x100 + c).substring(1);
+		}
+		
+		//calculate padding to equate to 32 bits
+		int paddingCount = 64 - binaryExtension.length();	
+		//padd to 64bits
+		for (int i=0; i < paddingCount; i++){
+			extBits.add(0);
+		}
+		
+		//split string into string array
+		String[] sizeStringArray = binaryExtension.split("(?!^)");
+		//add to sbits
+		for (int i=0; i < sizeStringArray.length; i++){
+			extBits.add(Integer.parseInt(sizeStringArray[i]));
+		}
+		
+		if (extBits.size() != 64){
+			success = false;//fail
+			System.out.println("populateExtensionBits() isn't working");
+		}
+		
+		//Set up iterator
+		extBitsIt = extBits.iterator();
 	}
 	
 
