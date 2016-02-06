@@ -9,8 +9,8 @@ public class Main {
 		//s.hideString("a", "white.bmp");
 //		System.out.println(s.hideString("this is a test message","baboon.bmp"));
 //		System.out.println(s.extractString("output.bmp"));
-		System.out.println(s.hideFile("README.md", "baboon.bmp"));
-		System.out.println(s.extractFile("output2.bmp"));
+		System.out.println(s.hideFile("../README.md", "baboon.bmp"));
+		System.out.println(s.extractFile("output.bmp"));
 	}
 
 }
