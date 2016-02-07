@@ -6,7 +6,10 @@ class Steg{
 	 * A constant to hold the number of bits per byte
 	 */
 	private final int byteLength=8;
-
+	/**
+	 * A constant to hold the number of bits used for the bmp header
+	 */
+	protected final int headerBitsLength = 54;
 	/**
 	 * A constant to hold the number of bits used to store the size of the file extracted
 	 */
@@ -15,7 +18,6 @@ class Steg{
 	 * A constant to hold the number of bits used to store the extension of the file extracted
 	 */
 	protected final int extBitsLength=64;
-
 
 	/**
 	 * Default constructor to create a steg object, doesn't do anything - so we actually don't need to declare it explicitly. Oh well. 
@@ -33,7 +35,34 @@ class Steg{
 	 * You can assume that the images are all in the same directory as the java files
 	 */
 	public String hideString(String payload, String cover_filename){
-		return null;
+
+		FileInputStream in = null;
+		FileOutputStream out = null;
+		String outName = "hiddenString.bmp";
+		
+		in = openInputStream(cover_filename);
+		out = openOutputStream(outName);
+
+		copyHeader(in,out);
+
+		ArrayList<Integer> binaryPayload = getBinaryPayload(payload);
+		
+		int byt;
+		try {
+			while((byt = in.read()) != -1){
+				if(binaryPayload.size() != 0){
+					out.write(swapLsb((binaryPayload.remove(0)).intValue(), byt));
+				}else{
+					out.write(byt);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Unable to read body of " + cover_filename + ".");
+			return "Fail";
+		}
+
+		return outName;
 	} 
 
 	//TODO you must write this method
@@ -44,7 +73,51 @@ class Steg{
 	 * was unsuccessful
 	 */
 	public String extractString(String stego_image){
-		return null;
+		FileInputStream in = null;
+		String byt = "";
+		String message = "";
+		int messageSize = 0;
+
+		in = openInputStream(stego_image);
+
+		try {
+			in.skip(headerBitsLength);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "ERROR - Unable to skip the header.";
+		}
+
+		try {
+			messageSize = getSize(in);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return "ERROR - Unable to get file size.";
+		}
+		
+		try {
+			for(int i = 0; i < messageSize; i++){
+
+				byt += extractLsb(in.read());
+
+				if(byt.length() == 8){
+					message += (char)Integer.parseInt(byt, 2);
+					byt = "";
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "ERROR - Unable to extract string.";
+		}
+
+		// Closing File
+		try {
+			in.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Fail";
+		}
+
+		return "String extracted from image: " + message;
 	}
 
 	//TODO you must write this method
@@ -58,113 +131,42 @@ class Steg{
 	public String hideFile(String file_payload, String cover_image){
 
 		FileReader fr = new FileReader(file_payload);
-
-		// Open Cover Image
 		FileInputStream in = null;
-		try {
-			in = new FileInputStream(cover_image);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			System.err.println("Unable to open " + cover_image + ".");
-			return "Fail";
-		}
+		FileOutputStream out = null;
 
-		// Read Header
-		List<Integer> header = new ArrayList<Integer>();
-		try {
-			for(int i = 0; i <54; i++){
-				header.add(in.read());
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Unable to read header of " + cover_image + ".");
-			return "Fail";
-		}
+		// 	Open Cover Image
+		in = openInputStream(cover_image);
 
-		// Read Body
-		List<Integer> body = new ArrayList<Integer>();
+		// Create Output File
+		out = openOutputStream("hiddenFile.bmp");
+
+		copyHeader(in,out);
+
+		// Copy Body
 		int byt;
 		try {
 			while((byt = in.read()) != -1){
-				body.add(byt);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Unable to read body of " + cover_image + ".");
-			return "Fail";
-		}
-
-
-
-
-		// Create Output File
-		FileOutputStream out = null;
-		String outName = "output.bmp";
-		try {
-			out = new FileOutputStream(outName);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			System.err.println("Unable to create output file.");
-			return "Fail";
-		}
-
-		// Copy Header To Output File (Unchanged)
-		try {
-			for(int i : header){
-				out.write(i);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Unable to write header to output file.");
-			return "Fail";
-		}
-
-		ArrayList<Integer> payload = new ArrayList<Integer>();
-
-		for(int i = 0; i < 96; i++){
-			payload.add(fr.getNextBit());
-		}
-
-		String a = "";
-		while(fr.hasNextBit()){
-			a += "" + fr.getNextBit();
-			if(a.length() == 8){
-				a = new StringBuilder(a).reverse().toString();
-				for(char c : a.toCharArray()){
-					payload.add(Character.getNumericValue(c));
+				if(fr.hasNextBit()){
+					out.write(swapLsb(fr.getNextBit(),byt));
+				}else{
+					out.write(byt);
 				}
-				a = "";
-			}
-		}
-
-		for(int i : payload){
-			System.out.print(i);
-		}
-		// Copy Body To Output File (Modified)
-		try {
-			for(int i : body){
-				if(!payload.isEmpty()){
-					i = swapLsb(payload.remove(0),i);
-				}
-				out.write(i);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Unable to write modified body to output file.");
-			return "Fail";
+			return "ERROR - Unable to copy body.";
 		}
 
+		// Closing Files
 		try {
 			in.close();
 			out.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return "Fail";
+			System.err.println("Unable to close files.");
 		}
 
-		//if successful then return the filename of outfile
-		return outName;
+		return "hiddenFile.bmp";
 	}
 
 	//TODO you must write this method
@@ -175,115 +177,63 @@ class Steg{
 	 * result of the successful extraction process
 	 */
 	public String extractFile(String stego_image){
-		//Create FileInputStream
+
 		FileInputStream in = null;
-		try {
-			in = new FileInputStream(stego_image);
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-			System.err.println("Unable to open " + stego_image + ".");
-			return "Fail";
-		}
-
-		try {
-			in.skip(54);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Unable to skip header.");
-			return "Fail";
-		}
-
-		// Read In File Body
-		List<Integer> fileBytes = new ArrayList<Integer>();
-		int c;
-		try{
-			while((c = in.read()) != -1){
-				fileBytes.add(c);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Unable to read body of " + stego_image + ".");
-			return "Fail";
-		}
-
-
-		System.out.println(fileBytes.size());
-
-		// Extract File Size
-		String binaryFileSize = "";
-		for(int i = 0; i < 32; i++){
-			binaryFileSize += extractLsb(fileBytes.remove(0));
-		}
-		
-
-		int newFileSize = Integer.parseInt(binaryFileSize,2);
-		System.out.println("\n" + newFileSize+1);
-		// Extract Extension
-		String binaryExtension = "";
-		for(int i = 0; i < 64; i++){
-			binaryExtension += extractLsb(fileBytes.remove(0));
-		}
-		String extension = "";
-		for(int i = 0; i <= binaryExtension.length()-8; i += 8)
-		{
-			extension += (char)Integer.parseInt(binaryExtension.substring(i, i+8), 2);
-		}
-
-
-
-		//Create outfile name
-		String outName = stego_image.substring(0, stego_image.length() - 4) + extension;
-		//Strip whitespace if any
-		outName = outName.replaceAll("\0", "");
-
-		//DO A CHECK HERE TO MAKE SURE fileBytes.size() >= stringSize
-		if (fileBytes.size() < newFileSize){
-			try {
-				in.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return "Fail";
-		}
-
-
-		//CREATE OUTPUT FILE
 		FileOutputStream out = null;
+		int fileSize = 0;
+		String extension = "";
 
+		in = openInputStream(stego_image);
+
+
+		// Skip Image Header
 		try {
-			out = new FileOutputStream("out.md");
-		} catch (FileNotFoundException e) {
+			in.skip(headerBitsLength);
+		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Unable to create output file.");
-			return "Fail";
+			return "ERROR - Unable to skip header.";
 		}
 
-System.out.println();
-		// Extract File
+		try {
+			fileSize = getSize(in);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "ERROR - Unable to get file size.";
+		}
+		try {
+			extension = getExtension(in);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "ERROR - Unable to get extension.";
+		}
 
+		out = openOutputStream(("output" + extension).replaceAll("\0", ""));
+
+
+		// Extract File
 		String byt = "";
-		//--------PROBLEM COULD LIE HERE?-----------
 		try{
-			for(int i = 0; i < newFileSize; i++){
-				byt += extractLsb(fileBytes.remove(0));
+			for(int i = 0; i < fileSize; i++){
+				byt += extractLsb(in.read());
 				if(byt.length() == 8){
-					System.out.println(byt);
+					byt = new StringBuilder(byt).reverse().toString();
 					out.write(Integer.parseInt(byt,2));
 					byt = "";
 				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "ERROR - Unable to extract file from image.";
 		}
 
+
+		// Closing Files
 		try {
 			in.close();
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "ERROR - Unable to close files.";
 		}
 
 		return "";
@@ -307,5 +257,78 @@ System.out.println();
 	 */
 	public int extractLsb(int byt){
 		return byt%2;
+	}
+
+	public FileInputStream openInputStream(String filename){
+		try {
+			return new FileInputStream(filename);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.err.println("ERROR - Unable to open " + filename + ".");
+		}
+		return null;
+	}
+
+	public FileOutputStream openOutputStream(String filename){
+		try {
+			return new FileOutputStream(filename);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.err.println("ERROR - Unable to open " + filename + ".");
+		}
+		return null;
+	}
+
+	public boolean copyHeader(FileInputStream in, FileOutputStream out){
+		// Copy Header To Output File
+		for(int i = 0; i < 54; i++){
+			try {
+				out.write(in.read());
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public int getSize(FileInputStream in) throws IOException{
+		String binarySize = "";
+		for(int i = 0; i < sizeBitsLength; i++){
+			binarySize += extractLsb(in.read());
+		}
+		return Integer.parseInt(binarySize,2);
+	}
+
+	public String getExtension(FileInputStream in) throws IOException{
+		String binaryExtension = "";
+		for(int i = 0; i < extBitsLength; i++){
+			binaryExtension += extractLsb(in.read());
+		}
+		String extension = "";
+		for(int i = 0; i <= binaryExtension.length()-8; i += 8)
+		{
+			extension += (char)Integer.parseInt(binaryExtension.substring(i, i+8), 2);
+		}
+		return extension;
+	}
+
+	public ArrayList<Integer> getBinaryPayload(String payload){
+		ArrayList<Integer> payLoadList = new ArrayList<Integer>();
+
+		// Convert Payload To Binary String (8 byte chunks)
+		String binaryPayload = "";
+		for(char c : payload.toCharArray()){
+			binaryPayload += Integer.toBinaryString(0x100 + c).substring(1);
+		}
+
+		// Convert Payload Size to Binary String (32 bits)
+		String binaryPayloadSize = Long.toBinaryString(0x100000000L + binaryPayload.length()).substring(1);
+
+		for(char c : (binaryPayloadSize + binaryPayload).toCharArray()){
+			payLoadList.add(Character.getNumericValue(c));
+		}
+
+		return payLoadList;
 	}
 }
