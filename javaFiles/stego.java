@@ -43,7 +43,7 @@ class Steg{
 		in = openInputStream(cover_filename);
 		out = openOutputStream(outName);
 
-		copyHeader(in,out);
+		if (copyHeader(in,out) == false) return "Fail";
 
 		ArrayList<Integer> binaryPayload = getBinaryPayload(payload);
 		
@@ -84,14 +84,14 @@ class Steg{
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to skip the header.";
+			return "Fail";
 		}
 
 		try {
 			messageSize = getSize(in);
 		} catch (IOException e1) {
 			e1.printStackTrace();
-			return "ERROR - Unable to get file size.";
+			return "Fail";
 		}
 		
 		try {
@@ -106,7 +106,7 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to extract string.";
+			return "Fail";
 		}
 
 		// Closing File
@@ -117,7 +117,7 @@ class Steg{
 			return "Fail";
 		}
 
-		return "String extracted from image: " + message;
+		return message;
 	}
 
 	//TODO you must write this method
@@ -140,7 +140,7 @@ class Steg{
 		// Create Output File
 		out = openOutputStream("hiddenFile.bmp");
 
-		copyHeader(in,out);
+		if (copyHeader(in,out) == false) return "Fail";
 
 		// Copy Body
 		int byt;
@@ -154,7 +154,7 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to copy body.";
+			return "Fail";
 		}
 
 		// Closing Files
@@ -164,6 +164,7 @@ class Steg{
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to close files.");
+			return "Fail";
 		}
 
 		return "hiddenFile.bmp";
@@ -191,20 +192,20 @@ class Steg{
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to skip header.";
+			return "Fail";
 		}
 
 		try {
 			fileSize = getSize(in);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to get file size.";
+			return "Fail";
 		}
 		try {
 			extension = getExtension(in);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to get extension.";
+			return "Fail";
 		}
 
 		out = openOutputStream(("output" + extension).replaceAll("\0", ""));
@@ -223,7 +224,7 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to extract file from image.";
+			return "Fail";
 		}
 
 
@@ -233,10 +234,11 @@ class Steg{
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "ERROR - Unable to close files.";
+			return "Fail";
 		}
-
-		return "";
+		
+		// Return the name of the extracted file
+		return ("output" + extension).replaceAll("\0", "");
 	}
 
 	//TODO you must write this method
