@@ -43,7 +43,7 @@ class Steg{
 		in = openInputStream(cover_filename);
 		out = openOutputStream(outName);
 
-		if (copyHeader(in,out) == false) return "Fail";
+		if (copyHeader(in,out) == false) return "Fail - unable to copy header to file";
 
 		ArrayList<Integer> binaryPayload = getBinaryPayload(payload);
 		
@@ -84,14 +84,14 @@ class Steg{
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to skip the header";
 		}
 
 		try {
 			messageSize = getSize(in);
 		} catch (IOException e1) {
 			e1.printStackTrace();
-			return "Fail";
+			return "Fail - unable to obtain file size";
 		}
 		
 		try {
@@ -106,7 +106,7 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to extract string";
 		}
 
 		// Closing File
@@ -114,7 +114,7 @@ class Steg{
 			in.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to close file";
 		}
 
 		return message;
@@ -140,7 +140,7 @@ class Steg{
 		// Create Output File
 		out = openOutputStream("hiddenFile.bmp");
 
-		if (copyHeader(in,out) == false) return "Fail";
+		if (copyHeader(in,out) == false) return "Fail - unable to copy header";
 
 		// Copy Body
 		int byt;
@@ -154,7 +154,7 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to copy body";
 		}
 
 		// Closing Files
@@ -164,7 +164,7 @@ class Steg{
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("Unable to close files.");
-			return "Fail";
+			return "Fail - unable to close file";
 		}
 
 		return "hiddenFile.bmp";
@@ -192,20 +192,20 @@ class Steg{
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to skip header";
 		}
 
 		try {
 			fileSize = getSize(in);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to obtain file size";
 		}
 		try {
 			extension = getExtension(in);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to obtain file extension";
 		}
 
 		out = openOutputStream(("output" + extension).replaceAll("\0", ""));
@@ -224,7 +224,7 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to extract file from image";
 		}
 
 
@@ -234,7 +234,7 @@ class Steg{
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Fail";
+			return "Fail - unable to close file";
 		}
 		
 		// Return the name of the extracted file
