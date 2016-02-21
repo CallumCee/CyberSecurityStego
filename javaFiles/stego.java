@@ -39,11 +39,15 @@ class Steg{
 		FileInputStream in = null;
 		FileOutputStream out = null;
 		String outName = "hiddenString.bmp";
-		File f = new File(cover_filename);;
+		File f = new File(cover_filename);
 		
 		// Open file streams
 		in = openInputStream(cover_filename);
 		out = openOutputStream(outName);
+		
+		// Check streams are working
+		if (in == null) return "Fail - error opening input file stream";
+		if (out == null) return "Fail - error opening output file stream";
 		
 		// Check if payloa is too large or file too small
 		if((payload.length() * byteLength) > f.length() - 54){
@@ -68,7 +72,6 @@ class Steg{
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - reading/writing error";
 		}
 		
@@ -77,7 +80,6 @@ class Steg{
 			in.close();
 			out.close();
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to close file streams";
 		}
 
@@ -99,12 +101,14 @@ class Steg{
 		
 		// Open file stream
 		in = openInputStream(stego_image);
+		
+		// Check stream is working
+		if (in == null) return "Fail - error opening input file stream";
 
 		// Skip image header
 		try {
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to skip the header";
 		}
 
@@ -112,7 +116,6 @@ class Steg{
 		try {
 			messageSize = getSize(in);
 		} catch (IOException e1) {
-			e1.printStackTrace();
 			return "Fail - unable to obtain file size";
 		}
 		
@@ -126,7 +129,6 @@ class Steg{
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to extract string";
 		}
 
@@ -134,7 +136,6 @@ class Steg{
 		try {
 			in.close();
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to close file";
 		}
 
@@ -162,6 +163,10 @@ class Steg{
 
 		// Create Output File Stream
 		out = openOutputStream("hiddenFile.bmp");
+		
+		// Check streams are working
+		if (in == null) return "Fail - error opening input file stream";
+		if (out == null) return "Fail - error opening output file stream";
 
 		// Create Files
 		f_payload = new File(file_payload);
@@ -187,7 +192,6 @@ class Steg{
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to copy body";
 		}
 
@@ -196,7 +200,6 @@ class Steg{
 			in.close();
 			out.close();
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to close file";
 		}
 		return "hiddenFile.bmp";
@@ -218,12 +221,14 @@ class Steg{
 
 		// Open file stream
 		in = openInputStream(stego_image);
+		
+		// Check stream is working
+		if (in == null) return "Fail - error opening input file stream";
 
 		// Skip Image Header
 		try {
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to skip header";
 		}
 
@@ -231,7 +236,6 @@ class Steg{
 		try {
 			fileSize = getSize(in);
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to obtain file size";
 		}
 		
@@ -239,12 +243,14 @@ class Steg{
 		try {
 			extension = getExtension(in);
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to obtain file extension";
 		}
 
 		// Open output file stream
 		out = openOutputStream(("output" + extension).replaceAll("\0", ""));
+		
+		// Check stream is working
+		if (out == null) return "Fail - error opening output file stream";
 
 		// Extract File
 		String byt = "";
@@ -258,7 +264,6 @@ class Steg{
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to extract file from image";
 		}
 
@@ -268,7 +273,6 @@ class Steg{
 			in.close();
 			out.close();
 		} catch (IOException e) {
-			e.printStackTrace();
 			return "Fail - unable to close file";
 		}
 		
@@ -305,7 +309,6 @@ class Steg{
 		try {
 			return new FileInputStream(filename);
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
@@ -319,7 +322,6 @@ class Steg{
 		try {
 			return new FileOutputStream(filename);
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
@@ -335,7 +337,6 @@ class Steg{
 			try {
 				out.write(in.read());
 			} catch (IOException e) {
-				e.printStackTrace();
 				return false;
 			}
 		}
