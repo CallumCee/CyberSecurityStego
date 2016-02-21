@@ -144,8 +144,13 @@ class Steg{
 	 * result of the successful hiding process
 	 */
 	public String hideFile(String file_payload, String cover_image){
-
-		FileReader fr = new FileReader(file_payload);
+		FileReader fr = null;
+		try{
+			fr = new FileReader(file_payload);
+		} catch(Exception e){
+			return "Fail - file problem";
+		}
+		
 		FileInputStream in = null;
 		FileOutputStream out = null;
 		File f_payload;
