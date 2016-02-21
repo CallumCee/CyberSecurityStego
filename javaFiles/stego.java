@@ -41,13 +41,9 @@ class Steg{
 		String outName = "hiddenString.bmp";
 		File f = new File(cover_filename);
 		
-		// Open file streams
-		in = openInputStream(cover_filename);
-		out = openOutputStream(outName);
-		
-		// Check streams are working
-		if (in == null) return "Fail - error opening input file stream";
-		if (out == null) return "Fail - error opening output file stream";
+		// Open file streams / Check streams are working
+		if ((in = openInputStream(cover_filename)) == null) return "Fail - error opening input file stream";
+		if ((out = openOutputStream(outName)) == null) return "Fail - error opening output file stream";
 		
 		// Check if payloa is too large or file too small
 		if((payload.length() * byteLength) > f.length() - 54){
@@ -99,11 +95,8 @@ class Steg{
 		String message = "";
 		int messageSize = 0;
 		
-		// Open file stream
-		in = openInputStream(stego_image);
-		
-		// Check stream is working
-		if (in == null) return "Fail - error opening input file stream";
+		// Open file stream / Check stream is working
+		if ((in = openInputStream(stego_image)) == null) return "Fail - error opening input file stream";
 
 		// Skip image header
 		try {
@@ -158,15 +151,12 @@ class Steg{
 		File f_payload;
 		File f_cover;
 
-		// 	Open Cover Image
-		in = openInputStream(cover_image);
-
-		// Create Output File Stream
-		out = openOutputStream("hiddenFile.bmp");
+		// 	Open Cover Image / Check stream is working
+		if ((in = openInputStream(cover_image)) == null) return "Fail - error opening input file stream";
 		
-		// Check streams are working
-		if (in == null) return "Fail - error opening input file stream";
-		if (out == null) return "Fail - error opening output file stream";
+
+		// Create Output File Stream / Check stream is working
+		if ((out = openOutputStream("hiddenFile.bmp")) == null) return "Fail - error opening output file stream";
 
 		// Create Files
 		f_payload = new File(file_payload);
@@ -219,11 +209,8 @@ class Steg{
 		int fileSize = 0;
 		String extension = "";
 
-		// Open file stream
-		in = openInputStream(stego_image);
-		
-		// Check stream is working
-		if (in == null) return "Fail - error opening input file stream";
+		// Open file stream / Check stream is working
+		if ((in = openInputStream(stego_image)) == null) return "Fail - error opening input file stream";
 
 		// Skip Image Header
 		try {
