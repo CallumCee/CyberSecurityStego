@@ -274,12 +274,14 @@ public class FileReader {
 	private void populateExtensionBits()
 	{	
 		String binaryExtension = "";
+		// Add LSB bit to String
 		for(char c : getExtension().toCharArray()){
 			binaryExtension += Integer.toBinaryString(0x100 + c).substring(1);
 		}
-		
+		// Fill up string with zeros so that there are 64 characters (bits)
 		String binaryExtension1 = String.format("%1$" + 64 + "s", binaryExtension).replace(' ', '0');
-
+		
+		// Add each character (bit) to extBits
 		for(char c : binaryExtension1.toCharArray()){
 			extBits.add(Character.getNumericValue(c));
 		}
