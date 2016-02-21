@@ -39,16 +39,27 @@ class Steg{
 		FileInputStream in = null;
 		FileOutputStream out = null;
 		String outName = "hiddenString.bmp";
+		File f = new File(cover_filename);;
 		
+		// Open file streams
 		in = openInputStream(cover_filename);
 		out = openOutputStream(outName);
-
+		
+		// Check if payloa is too large or file too small
+		if((payload.length() * byteLength) > f.length() - 54){
+			return "Fail - message too long or file too small";
+		}
+		
+		// Copy header to output file
 		if (copyHeader(in,out) == false) return "Fail - unable to copy header to file";
 
+		// Populate ArrayList with bits
 		ArrayList<Integer> binaryPayload = getBinaryPayload(payload);
 		
+		// Write payload to file
 		int byt;
 		try {
+			// Copy entire file
 			while((byt = in.read()) != -1){
 				if(binaryPayload.size() != 0){
 					out.write(swapLsb((binaryPayload.remove(0)).intValue(), byt));
@@ -58,8 +69,16 @@ class Steg{
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Unable to read body of " + cover_filename + ".");
-			return "Fail";
+			return "Fail - reading/writing error";
+		}
+		
+		// Closing files
+		try {
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Fail - unable to close file streams";
 		}
 
 		return outName;
@@ -77,9 +96,11 @@ class Steg{
 		String byt = "";
 		String message = "";
 		int messageSize = 0;
-
+		
+		// Open file stream
 		in = openInputStream(stego_image);
 
+		// Skip image header
 		try {
 			in.skip(headerBitsLength);
 		} catch (IOException e) {
@@ -87,6 +108,7 @@ class Steg{
 			return "Fail - unable to skip the header";
 		}
 
+		// Get message size
 		try {
 			messageSize = getSize(in);
 		} catch (IOException e1) {
@@ -94,11 +116,10 @@ class Steg{
 			return "Fail - unable to obtain file size";
 		}
 		
+		// Extracting string
 		try {
 			for(int i = 0; i < messageSize; i++){
-
 				byt += extractLsb(in.read());
-
 				if(byt.length() == 8){
 					message += (char)Integer.parseInt(byt, 2);
 					byt = "";
@@ -133,18 +154,31 @@ class Steg{
 		FileReader fr = new FileReader(file_payload);
 		FileInputStream in = null;
 		FileOutputStream out = null;
+		File f_payload;
+		File f_cover;
 
 		// 	Open Cover Image
 		in = openInputStream(cover_image);
 
-		// Create Output File
+		// Create Output File Stream
 		out = openOutputStream("hiddenFile.bmp");
 
+		// Create Files
+		f_payload = new File(file_payload);
+		f_cover = new File(cover_image);
+		
+		// Check if payload file is too large or cover image too small
+		if((f_payload.length() * byteLength) > f_cover.length() -54){
+			return "Fail - file payload too large or cover image too small";
+		}
+		
+		// Copy header
 		if (copyHeader(in,out) == false) return "Fail - unable to copy header";
 
-		// Copy Body
+		// Write payload file to output file
 		int byt;
 		try {
+			// Copy entire file
 			while((byt = in.read()) != -1){
 				if(fr.hasNextBit()){
 					out.write(swapLsb(fr.getNextBit(),byt));
@@ -163,10 +197,8 @@ class Steg{
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Unable to close files.");
 			return "Fail - unable to close file";
 		}
-
 		return "hiddenFile.bmp";
 	}
 
@@ -184,8 +216,8 @@ class Steg{
 		int fileSize = 0;
 		String extension = "";
 
+		// Open file stream
 		in = openInputStream(stego_image);
-
 
 		// Skip Image Header
 		try {
@@ -195,12 +227,15 @@ class Steg{
 			return "Fail - unable to skip header";
 		}
 
+		// Get file size
 		try {
 			fileSize = getSize(in);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "Fail - unable to obtain file size";
 		}
+		
+		// Get extension
 		try {
 			extension = getExtension(in);
 		} catch (IOException e) {
@@ -208,8 +243,8 @@ class Steg{
 			return "Fail - unable to obtain file extension";
 		}
 
+		// Open output file stream
 		out = openOutputStream(("output" + extension).replaceAll("\0", ""));
-
 
 		// Extract File
 		String byt = "";
@@ -261,26 +296,39 @@ class Steg{
 		return byt%2;
 	}
 
+	/**
+	 * This method creates a new FileInputStream
+	 * @param filename
+	 * @return FileInputStream
+	 */
 	public FileInputStream openInputStream(String filename){
 		try {
 			return new FileInputStream(filename);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			System.err.println("ERROR - Unable to open " + filename + ".");
 		}
 		return null;
 	}
 
+	/**
+	 * This method creates a new FileOutputStream
+	 * @param filename
+	 * @return FileOutputStream
+	 */
 	public FileOutputStream openOutputStream(String filename){
 		try {
 			return new FileOutputStream(filename);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			System.err.println("ERROR - Unable to open " + filename + ".");
 		}
 		return null;
 	}
 
+	/**
+	 * This method copies the header of one file to another
+	 * @param in, out
+	 * @return boolean - failed or passed
+	 */
 	public boolean copyHeader(FileInputStream in, FileOutputStream out){
 		// Copy Header To Output File
 		for(int i = 0; i < 54; i++){
@@ -294,6 +342,11 @@ class Steg{
 		return true;
 	}
 
+	/**
+	 * This method gets the size hidden in a file
+	 * @param in
+	 * @return int - size
+	 */
 	public int getSize(FileInputStream in) throws IOException{
 		String binarySize = "";
 		for(int i = 0; i < sizeBitsLength; i++){
@@ -302,12 +355,19 @@ class Steg{
 		return Integer.parseInt(binarySize,2);
 	}
 
+	/**
+	 * This method gets the extension hidden in file
+	 * @param in
+	 * @return String - extension
+	 */
 	public String getExtension(FileInputStream in) throws IOException{
 		String binaryExtension = "";
+		// Read in bits
 		for(int i = 0; i < extBitsLength; i++){
 			binaryExtension += extractLsb(in.read());
 		}
 		String extension = "";
+		// Covert bytes into characters
 		for(int i = 0; i <= binaryExtension.length()-8; i += 8)
 		{
 			extension += (char)Integer.parseInt(binaryExtension.substring(i, i+8), 2);
@@ -327,6 +387,7 @@ class Steg{
 		// Convert Payload Size to Binary String (32 bits)
 		String binaryPayloadSize = Long.toBinaryString(0x100000000L + binaryPayload.length()).substring(1);
 
+		// Add bits to ArrayList
 		for(char c : (binaryPayloadSize + binaryPayload).toCharArray()){
 			payLoadList.add(Character.getNumericValue(c));
 		}
